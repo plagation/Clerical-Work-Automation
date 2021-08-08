@@ -5,17 +5,19 @@ Created on Fri Jul 23 07:28:11 2021
 @author: kyle.conrad
 """
 
-import Shipment
-import time
+from Shipment import Shipment
+from Helpers import Helpers
+
+import time, re
+
 from pathlib import Path
-import re
 from openpyxl import load_workbook
 from datetime import date
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
-class BoscusTruckReception(Shipment.Shipment):
+class BoscusTruckReception(Shipment):
     dirPath = str(Path.cwd()).replace("\\", "/")
     
     def set_remarks(self):
@@ -66,36 +68,42 @@ class BoscusTruckReception(Shipment.Shipment):
                 
     def form_manifest(self):
         self.parse_pdf()
-        workbook = load_workbook(filename = self.dirPath + "/import-manifest.xlsx")
-        sheet = workbook.active
         
-        while sheet.cell(3,1).value != None:
-            sheet.delete_rows(3)
+        try:
+            print("\nAttempting to create import manifest...")
+            workbook = load_workbook(filename = self.dirPath + "/import-manifest.xlsx")
+            sheet = workbook.active
             
-        i = 0
-        while i < len(self.pieceCounts):
-            row = 3 + i
-            sheet.cell(row,1).value = "Boscus"
-            sheet.cell(row,2).value = "Nasco Stock"
-            sheet.cell(row,3).value = "Lumber"
-            sheet.cell(row,4).value = "Dimensional Lumber"
-            sheet.cell(row,5).value = "Unit"
-            sheet.cell(row,6).value = self.pieceCounts[i]
-            sheet.cell(row,7).value = "Can be containerized"
-            sheet.cell(row,9).value = self.bundleCounts[i]
-            sheet.cell(row,10).value = "Description"
-            sheet.cell(row,11).value = self.descriptions[i]
-            sheet.cell(row,12).value = "Other"
-            sheet.cell(row,13).value = date.today().strftime("%m/%d/%Y")
-            sheet.cell(row,30).value = self.volumes[i]
-            sheet.cell(row,31).value = "FBM"
-            sheet.cell(row,32).value = self.weights[i]
-            sheet.cell(row,33).value = "lb"
-            sheet.cell(row,34).value = "East Pavement"
-            i += 1
-        
-        workbook.save(self.dirPath + "/import-manifest.xlsx")
-        workbook.close()
+            while sheet.cell(3,1).value != None:
+                sheet.delete_rows(3)
+                
+            i = 0
+            while i < len(self.pieceCounts):
+                row = 3 + i
+                sheet.cell(row,1).value = "Boscus"
+                sheet.cell(row,2).value = "Nasco Stock"
+                sheet.cell(row,3).value = "Lumber"
+                sheet.cell(row,4).value = "Dimensional Lumber"
+                sheet.cell(row,5).value = "Unit"
+                sheet.cell(row,6).value = self.pieceCounts[i]
+                sheet.cell(row,7).value = "Can be containerized"
+                sheet.cell(row,9).value = self.bundleCounts[i]
+                sheet.cell(row,10).value = "Description"
+                sheet.cell(row,11).value = self.descriptions[i]
+                sheet.cell(row,12).value = "Other"
+                sheet.cell(row,13).value = date.today().strftime("%m/%d/%Y")
+                sheet.cell(row,30).value = self.volumes[i]
+                sheet.cell(row,31).value = "FBM"
+                sheet.cell(row,32).value = self.weights[i]
+                sheet.cell(row,33).value = "lb"
+                sheet.cell(row,34).value = "East Pavement"
+                i += 1
+            
+            workbook.save(self.dirPath + "/import-manifest.xlsx")
+            workbook.close()
+            print("Import manifest successfully created")
+        except:
+            Helpers.Exceptions.unexpected_exception("craete import manifest")
             
     def CreateShipment(self):
         self.set_remarks()
@@ -104,7 +112,7 @@ class BoscusTruckReception(Shipment.Shipment):
         WebDriverWait(self.driver,50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/section[1]/div[2]/div[2]/button'))
         time.sleep(1.5)
         self.driver.find_element_by_xpath('//*[@id="viewport"]/article/section/section[1]/div[2]/div[2]/button').click()
-        WebDriverWait(self.driver, 10).until(lambda x: x.find_element(By.XPATH, '/html/body/div[3]/div/form/header/menu/button[2]'))
+        WebDriverWait(self.driver, 30).until(lambda x: x.find_element(By.XPATH, '/html/body/div[3]/div/form/header/menu/button[2]'))
         self.driver.find_element_by_xpath('/html/body/div[3]/div/form/header/menu/button[2]').click()
         WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="react-select-5-input"]'))
         self.driver.find_element_by_xpath('//*[@id="react-select-5-input"]').send_keys(self.truckingCompany + Keys().RETURN)

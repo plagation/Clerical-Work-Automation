@@ -7,7 +7,8 @@ Created on Fri Jul 23 13:28:22 2021
 
 import Shipment
 
-import time
+import time, traceback, sys
+
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -49,38 +50,72 @@ class BulkShipment(Shipment.Shipment):
         self.set_variables()
         
         #navigate to tc3 shipments
-        self.driver.get('https://tos.qsl.com/client-inventories/shipment-of-materials')
-        element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/section[1]/div[2]/div[2]/button'))
-        time.sleep(1.5)
+        try:
+            print("Navigating to shipments...")
+            self.driver.get('https://tos.qsl.com/client-inventories/shipment-of-materials')
+            element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/section[1]/div[2]/div[2]/button'))
+            time.sleep(1.5)
+            print("Navigate to Shipments")
+        
+        except:
+            print("An exception occurred while attempting to navigate to Shipments")
         
         #create new shipment (select port) of bulk material via truck
-        element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/section[1]/div[2]/div[2]/button'))
-        time.sleep(1.5)
-        element.click()
-        element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '/html/body/div[3]/div/form/div/div[3]/label[1]'))
-        element.click()
-        self.driver.find_element_by_xpath('/html/body/div[3]/div/form/header/menu/button[2]').click()
-        
+        try:
+            print("Attempting to create a new bulk shipment via truck...")
+            element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/section[1]/div[2]/div[2]/button'))
+            time.sleep(1.5)
+            element.click()
+            element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '/html/body/div[3]/div/form/div/div[3]/label[1]'))
+            element.click()
+            self.driver.find_element_by_xpath('/html/body/div[3]/div/form/header/menu/button[2]').click()
+            print("Successfully created new bulk (truck) shipment")
+        except:
+            print("An exception occurred while attempting to create a new bulk (truck) shipment")
+            
         #fill in truck information
-        element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="react-select-2-input"]'))
-        element.send_keys(self.truckingCompany + Keys().RETURN)
-        self.driver.find_element_by_xpath('//*[@id="driverName"]').send_keys(self.driverName)
-        self.driver.find_element_by_xpath('//*[@id="carrierBill"]').send_keys(self.poNumber)
-        self.driver.find_element_by_xpath('//*[@id="transportationNumber"]').send_keys(self.licenseNumber)
-        self.driver.find_element_by_xpath('//*[@id="specialInstructions"]').send_keys(self.remarks)
-        
+        try:
+            print("Attempting to add shipment information...")
+            element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="react-select-2-input"]'))
+            element.send_keys(self.truckingCompany + Keys().RETURN)
+            self.driver.find_element_by_xpath('//*[@id="driverName"]').send_keys(self.driverName)
+            self.driver.find_element_by_xpath('//*[@id="carrierBill"]').send_keys(self.poNumber)
+            self.driver.find_element_by_xpath('//*[@id="transportationNumber"]').send_keys(self.licenseNumber)
+            self.driver.find_element_by_xpath('//*[@id="specialInstructions"]').send_keys(self.remarks)
+            print("Shipment information added")
+        except:
+            print("An exception occurred while attempting to add Shipment information")
+            
         #add destination
-        self.driver.find_element_by_xpath('//*[@id="viewport"]/article/section/form/fieldset[2]/article/header/button').click()
-        element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="react-select-3-input"]'))
-        element.send_keys(self.receiver + Keys().RETURN)
-        self.driver.find_element_by_xpath('//*[@id="viewport"]/article/section/form/fieldset[2]/article/section/section/div/menu/section/div[5]/i').click()
-        element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="formattedAddress"]'))
-        element.send_keys(self.address)
-        self.driver.find_element_by_xpath('/html/body/div[5]/div/header/menu/button[2]').click()
-        
+        try:
+            print("Attempting to add destination...")
+            self.driver.find_element_by_xpath('//*[@id="viewport"]/article/section/form/fieldset[2]/article/header/button').click()
+            element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="react-select-3-input"]'))
+            element.send_keys(self.receiver + Keys().RETURN)
+            
+            try:
+                self.driver.find_element_by_xpath('//*[@id="viewport"]/article/section/form/fieldset[2]/article/section/section/div/menu/section/div[5]/div/label').click()
+            
+            except:
+                pass
+            
+            self.driver.find_element_by_xpath('//*[@id="viewport"]/article/section/form/fieldset[2]/article/section/section/div/menu/section/div[5]/i').click()
+            element = WebDriverWait(self.driver, 10).until(lambda x: x.find_element(By.XPATH, '//*[@id="formattedAddress"]'))
+            element.send_keys(self.address)
+            self.driver.find_element_by_xpath('/html/body/div[5]/div/header/menu/button[2]').click()
+            print("Successfully added destination")
+            
+        except:
+            print("An unexpected exception occurred while attempting to add destination: \n")
+            print(traceback.print_exc())
+            
         #save shipment
-        self.driver.find_element_by_xpath('//*[@id="viewport"]/article/section/form/section[2]/div/div[2]/button[2]').click()
-        
+        try:
+            print("Attempting to save shipment...")
+            self.driver.find_element_by_xpath('//*[@id="viewport"]/article/section/form/section[2]/div/div[2]/button[2]').click()
+            print("Successfully saved new shipment")
+        except:
+            print("An exception occurred while saving shipment")
         #navigate to shipped items
         element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/form/section[1]/div[3]/nav/menu/a[2]'))
         element.click()

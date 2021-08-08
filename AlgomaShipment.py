@@ -6,13 +6,14 @@ Created on Thu Jul 22 11:57:30 2021
 """
 
 import Shipment
-import time
-import re
+from Helpers import Helpers
+import time, subprocess
+
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
+
 
 class AlgomaShipment(Shipment.Shipment):
     def set_remarks(self):
@@ -22,22 +23,30 @@ class AlgomaShipment(Shipment.Shipment):
     def set_pickupNumber(self):
         self.pickupNumber = self.dor
         
+    def print_loading_request(self):
+        try:
+            print("\nAttempting to print loading request...")
+            Helpers.Email.main(self.dirPath + "/PrintLoadingRequest.ps1", "-bol", self.bolNum)
+            print("Loading request successfully printed")
+            
+        except:
+            Helpers.Exceptions.unexpected_exception("print loading request")
+        
     def add_load(self):
         WebDriverWait(self.driver,50).until(lambda x: x.find_element(By.XPATH,'//*[@id="viewport"]/article/section/form/section[1]/div[3]/nav/menu/a[2]'))
-        self.bolNum = self.driver.find_element_by_xpath('//*[@id="viewport"]/article/section/form/section[1]/div[2]/div[1]/h3').text
         self.driver.get('https://tos.qsl.com/client-inventories/shipment-of-materials/' + self.bolNum + '/loading-request')
-        WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/article/header[2]/aside/button'))
-        self.driver.find_element_by_xpath('//*[@id="viewport"]/article/section/article/header[2]/aside/button').click()
-        WebDriverWait(self.driver, 30).until(lambda x: x.find_element(By.XPATH, '/html/body/div[13]/div/div/article/form/div/div/button'))
-        self.driver.find_element_by_xpath('/html/body/div[13]/div/div/article/form/div/div/button').click()
+        element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/article/header[2]/aside/button'))
+        element.click()
+        element = WebDriverWait(self.driver, 30).until(lambda x: x.find_element(By.XPATH, '/html/body/div[13]/div/div/article/form/div/div/button'))
+        element.click()
         
         WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '/html/body/div[13]/div/div/article/section/div/div/div[1]/div[4]/div/div[2]/span/button'))
         element = self.driver.find_element_by_xpath('/html/body/div[13]/div/div/article/section/div/div/div[1]/div[1]/div[3]/span/span[1]/div/div')
         
         actions = ActionChains(self.driver)
         actions.context_click(element).perform()
-        WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '/html/body/nav[2]/section/div[2]/div[3]/div/div/span[23]/div/label'))
-        self.driver.find_element_by_xpath('/html/body/nav[2]/section/div[2]/div[3]/div/div/span[23]/div/label').click()
+        element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '/html/body/nav[2]/section/div[2]/div[3]/div/div/span[23]/div/label'))
+        element.click()
         self.driver.find_element_by_xpath('/html/body/div[13]/div/div/article/section/div/div/div[1]/div[1]/div[4]/span/span[1]/div/div/span').click()
         WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '/html/body/div[13]/div/div/article/section/div/div/div[1]/div[4]/div/div[1]/div[9]/span'))
         coilQuantity = self.driver.find_element_by_xpath('/html/body/div[13]/div/div/article/header/div/h6[1]').text.split("/")[1]
@@ -45,6 +54,9 @@ class AlgomaShipment(Shipment.Shipment):
         dateArr = []
         
         for i in range(4, 4 + int(coilQuantity)):
+            if i % 5 == 0:
+                self.driver.execute_script("window.scrollBy(0,window.innerHeight)")
+                time.sleep(.5)
             testVal = self.driver.find_element_by_xpath('/html/body/div[13]/div/div/article/section/div/div/div[1]/div[' + str(i) + ']/div/div[1]/div[9]/span').text
             
             if "HOT" in testVal.upper():
@@ -89,6 +101,7 @@ class AlgomaShipment(Shipment.Shipment):
         
         try:
             self.driver.find_element_by_xpath('/html/body/div[13]/div/div/div[1]/header/menu/button[3]').click()
+            
         except NoSuchElementException:
             self.driver.find_element_by_xpath('/html/body/div[13]/div/div/header/menu/button[3]').click()
             
@@ -96,6 +109,7 @@ class AlgomaShipment(Shipment.Shipment):
         element.click()
         
         element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/section[1]/div[2]/div[2]/div[2]'))
+        time.sleep(.5)
         element.click()
         
         element = WebDriverWait(self.driver,50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/section[1]/div[2]/div[2]/div[2]/ul/li[1]'))
@@ -104,7 +118,7 @@ class AlgomaShipment(Shipment.Shipment):
         element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '/html/body/div[5]/div/form/header/menu/button[2]'))
         element.click()
         
-        element = WebDriverWait(self.driver, 50).until(lambda x: x.find_element(By.XPATH, '//*[@id="viewport"]/article/section/section[1]/div[2]/div[1]/h3'))
-        bol = element.text
-        time.sleep(3)
+        time.sleep(2)
+        
+        self.print_loading_request()
         
